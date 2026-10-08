@@ -1,10 +1,10 @@
 import streamlit as st
-import tempfile
 import os
+import pypdf
 from google import genai
 from google.genai import types
 
-# 1. Authenticate using Streamlit Secrets (or local environment variables)
+# 1. Authenticate
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
 except (KeyError, FileNotFoundError):
@@ -21,14 +21,13 @@ st.title("📚 AI Textbook Tutor (Gemini)")
 # 2. Initialize Session State & Chat Object
 if "chat" not in st.session_state:
     st.session_state.messages = []
-    st.session_state.gemini_file = None
+    st.session_state.textbook_text = None
     
-    # Create the stateful chat session with the Code Interpreter enabled
     st.session_state.chat = client.chats.create(
         model="gemini-3.8-flash",
         config=types.GenerateContentConfig(
             system_instruction=(
-                "You are an AI educator. Answer student questions using ONLY the provided textbook files. "
+                "You are an AI educator. Answer student questions using ONLY the provided textbook text. "
                 "If math is required, use your code execution tool to calculate the exact answer. "
                 "Structure every response with: 1) A clear conceptual explanation, "
                 "2) The step-by-step mathematical solution, and 3) Two follow-up questions."
@@ -37,17 +36,19 @@ if "chat" not in st.session_state:
         )
     )
 
-# 3. Sidebar: File Upload directly to Gemini
+# 3. Sidebar: File Upload and Text Extraction
 uploaded_file = st.sidebar.file_uploader("Upload Textbook (PDF)", type=["pdf"])
-if uploaded_file and not st.session_state.gemini_file:
-    with st.spinner("Uploading and analyzing textbook..."):
-        # Save Streamlit's in-memory file to a temp file for Gemini to read
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(uploaded_file.getvalue())
-            tmp_path = tmp.name
+if uploaded_file and not st.session_state.textbook_text:
+    with st.spinner("Extracting textbook text..."):
+        # Read the PDF text locally instead of uploading the raw file to Google
+        pdf_reader = pypdf.PdfReader(uploaded_file)
+        extracted_text = ""
+        for page in pdf_reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                extracted_text += page_text + "\n"
         
-        # Upload the whole file directly to Gemini's memory
-        st.session_state.gemini_file = client.files.upload(file=tmp_path)
+        st.session_state.textbook_text = extracted_text
         st.sidebar.success("Textbook learned! Ask me anything.")
 
 # 4. Render Chat History
@@ -64,14 +65,15 @@ if prompt := st.chat_input("Ask a question or provide a problem..."):
     with st.chat_message("assistant"):
         with st.spinner("Thinking and calculating..."):
             
-            # If this is the first prompt after uploading the file, send the file alongside the text
-            prompt_contents = [prompt]
-            if st.session_state.gemini_file and "file_sent" not in st.session_state:
-                prompt_contents.insert(0, st.session_state.gemini_file)
+            # If this is the first prompt, combine the textbook text with the user's question
+            if st.session_state.textbook_text and "file_sent" not in st.session_state:
+                full_prompt = f"TEXTBOOK REFERENCE MATERIAL:\n{st.session_state.textbook_text}\n\nSTUDENT QUESTION:\n{prompt}"
                 st.session_state.file_sent = True
+            else:
+                full_prompt = prompt
             
             # Send message to Gemini Chat Session
-            response = st.session_state.chat.send_message(prompt_contents)
+            response = st.session_state.chat.send_message(full_prompt)
             
             st.markdown(response.text)
             st.session_state.messages.append({"role": "assistant", "content": response.text})
