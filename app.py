@@ -10,7 +10,11 @@ try:
 except (KeyError, FileNotFoundError):
     API_KEY = os.environ.get("GEMINI_API_KEY")
 
-client = genai.Client(api_key=API_KEY)
+@st.cache_resource
+def get_client():
+    return genai.Client(api_key=API_KEY)
+
+client = get_client()
 
 st.title("📚 AI Textbook Tutor (Gemini)")
 
