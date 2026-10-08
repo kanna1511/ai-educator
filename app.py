@@ -73,7 +73,12 @@ if prompt := st.chat_input("Ask a question or provide a problem..."):
                 full_prompt = prompt
             
             # Send message to Gemini Chat Session
-            response = st.session_state.chat.send_message(full_prompt)
-            
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            try:
+                response = st.session_state.chat.send_message(full_prompt)
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except Exception as e:
+                if "503" in str(e) or "UNAVAILABLE" in str(e):
+                    st.error("Google's AI servers are temporarily busy. Please wait a minute and try again!")
+                else:
+                    st.error(f"An API error occurred: {e}")
