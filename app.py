@@ -47,7 +47,7 @@ if prompt := st.chat_input("Ask a question or provide a problem..."):
                     "Structure every response with: 1) A clear conceptual explanation, "
                     "2) The step-by-step mathematical solution, and 3) Two follow-up questions."
                 ),
-                "tools": [{"type": "code_interpreter"}]
+                "tools": [{"type": "code_interpreter", "container": {"type": "auto"}}]
             }
 
             if st.session_state.vector_store_id:
