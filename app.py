@@ -53,7 +53,7 @@ if prompt := st.chat_input("Ask a question or provide a problem..."):
             if st.session_state.vector_store_id:
                 kwargs["tools"].append({
                     "type": "file_search", 
-                    "file_search": {"vector_store_ids": [st.session_state.vector_store_id]}
+                    "vector_store_ids": [st.session_state.vector_store_id]
                 })
 
             if st.session_state.previous_response_id:
