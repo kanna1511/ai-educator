@@ -29,7 +29,7 @@ if "messages" not in st.session_state:
                 "Structure every response with: 1) A clear conceptual explanation, "
                 "2) The step-by-step mathematical solution, and 3) Two follow-up questions."
             ),
-            tools=[{"type": "code_execution"}]
+            tools=[{"code_execution": {}}]
         )
     )
 
