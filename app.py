@@ -17,8 +17,8 @@ if uploaded_file and not st.session_state.vector_store_id:
     with st.spinner("Processing textbook..."):
         openai_file = client.files.create(file=uploaded_file, purpose="assistants")
         
-        vector_store = client.beta.vector_stores.create(name="Textbook Store")
-        client.beta.vector_stores.files.create(
+        vector_store = client.vector_stores.create(name="Textbook Store")
+        client.vector_stores.files.create(
             vector_store_id=vector_store.id, 
             file_id=openai_file.id
         )
