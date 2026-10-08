@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import pypdf
 from google import genai
+import time
 from google.genai import types
 
 # 1. Authenticate
@@ -73,12 +74,29 @@ if prompt := st.chat_input("Ask a question or provide a problem..."):
                 full_prompt = prompt
             
             # Send message to Gemini Chat Session
-            try:
-                response = st.session_state.chat.send_message(full_prompt)
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-            except Exception as e:
-                if "503" in str(e) or "UNAVAILABLE" in str(e):
-                    st.error("Google's AI servers are temporarily busy. Please wait a minute and try again!")
-                else:
-                    st.error(f"An API error occurred: {e}")
+            # Create an empty placeholder to update our status messages
+            status_container = st.empty()
+            max_retries = 5
+            
+            for attempt in range(max_retries):
+                try:
+                    # Attempt to send the message
+                    response = st.session_state.chat.send_message(full_prompt)
+                    
+                    # If successful, clear the warning, print the text, and save to memory
+                    status_container.empty()
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    break  # Exit the retry loop
+                    
+                except Exception as e:
+                    if "503" in str(e) or "UNAVAILABLE" in str(e):
+                        if attempt < max_retries - 1:
+                            # Update the UI and wait 10 seconds before looping again
+                            status_container.warning(f"⏳ Servers are busy. Auto-retrying in 10 seconds... (Attempt {attempt + 1} of {max_retries})")
+                            time.sleep(10)
+                        else:
+                            status_container.error("Google's servers are still at maximum capacity. Please try again later.")
+                    else:
+                        status_container.error(f"An API error occurred: {e}")
+                        break  # Stop retrying if it is a different kind of error
