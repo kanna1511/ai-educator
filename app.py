@@ -25,7 +25,7 @@ if "chat" not in st.session_state:
     
     # Create the stateful chat session with the Code Interpreter enabled
     st.session_state.chat = client.chats.create(
-        model="gemini-2.5-flash",
+        model="gemini-3.8-flash",
         config=types.GenerateContentConfig(
             system_instruction=(
                 "You are an AI educator. Answer student questions using ONLY the provided textbook files. "
