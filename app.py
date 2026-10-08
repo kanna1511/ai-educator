@@ -15,7 +15,7 @@ client = genai.Client(api_key=API_KEY)
 st.title("📚 AI Textbook Tutor (Gemini)")
 
 # 2. Initialize Session State & Chat Object
-if "messages" not in st.session_state:
+if "chat" not in st.session_state:
     st.session_state.messages = []
     st.session_state.gemini_file = None
     
